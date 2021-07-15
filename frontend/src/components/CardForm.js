@@ -21,31 +21,8 @@ function CardForm() {
   })
 
   function validate() {
-    return Object.values(errors).every(x => x === "")
-  }
-
-  function handleChange(e) {
-    const { id, value } = e.target
-    switch (id) {
-      case "name":
-        setName(value);
-        break;
-      case "number":
-        setNumber(value);
-        break;
-      case "expiry":
-        setExpiry(value);
-        break;
-      case "cvc":
-        setCvc(value);
-        break;
-      default:
-        break;
-    }
-
-    // setErr()
     let err = {}
-    console.log(name, number, expiry, cvc)
+    console.log("validate- ", name, number, expiry, cvc)
     err.name = name === "" ? "Name is required" : ""
     err.number = number.length < 16 ? "Card number should be atleast 16 digits" : ""
     err.cvc = ""
@@ -54,35 +31,39 @@ function CardForm() {
     err.expiry = expiry === "" ? "Expiry date is required" : ""  
   
     setErrors(err)
+    return Object.values(err).every(x => x === "")
+
   }
 
-  async function handleSubmit(e) {
-    // check for non empty values
-    if (name === "" || number === "" || cvc === "" || expiry === "") {
-      window.alert('Please fill the form to submit');
-      return;
+  async function sendData() {
+    let body = {
+      name: name,
+      number: number,
+      expiry: expiry,
+      cvc: cvc
     }
+    axios.post(`${url}/cards`, {
+      data: body
+    })
+    .then((resp) => {
+      // console.log(resp);
+      console.log('success');
+    })
+    .catch((err) => {
+      console.log(err);
+      window.alert('Error while sending data');
+    });
+  }
+
+  async function handleSubmit() {
     // validate
-    if (validate()){
-      // make api post call
-      let body = {
-        name: name,
-        number: number,
-        expiry: expiry,
-        cvc: cvc
-      }
-      axios.post(`${url}/cards`, {
-        body: body
-      })
-      .then((resp) => {
-        // console.log(resp);
-        console.log('success');
-      })
-      .catch((err) => {
-        console.log(err);
-        window.alert('Error while sending data');
-      });
-    };
+    console.log("handle submit = ", name, number, expiry, cvc);
+    let valid = validate();
+    if (valid) {
+      await sendData();
+    } else {
+      console.log("unsuccessful")
+    }
   }
 
   return (
@@ -103,7 +84,7 @@ function CardForm() {
           label="Card Number"
           placeholder="Card Number"
           onFocus={() => {setFocus('number')}}
-          onChange={handleChange}
+          onChange={(e) => {setNumber(e.target.value)}}
           error={errors.number !== ""}
           helperText={errors.number}
         />
@@ -113,7 +94,7 @@ function CardForm() {
           size="small"
           placeholder="Cardholder Name"
           onFocus={() => {setFocus('name')}}
-          onChange={handleChange}
+          onChange={(e) => {setName(e.target.value)}}
           error={errors.name !== ""}
           helperText={errors.name}
         />
@@ -126,7 +107,7 @@ function CardForm() {
             size="small"
             placeholder="mm/yy"
             onFocus={() => {setFocus('expiry')}}
-            onChange={handleChange}
+            onChange={(e) => {setExpiry(e.target.value)}}
             error={errors.expiry !== ""}
             helperText={errors.expiry}
           />
@@ -136,7 +117,7 @@ function CardForm() {
             placeholder="cvc"
             label="CVC"
             onFocus={() => {setFocus('cvc')}}
-            onChange={handleChange}
+            onChange={(e) => {setCvc(e.target.value)}}
             error={errors.cvc !== ""}
             helperText={errors.cvc}
           />
