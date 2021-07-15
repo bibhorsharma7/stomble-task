@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import axios from 'axios';
+import url from '../constants/url';
 import Cards from 'react-credit-cards';
 import 'react-credit-cards/es/styles-compiled.css';
 
@@ -18,19 +20,6 @@ function CardForm() {
     expiry: ""
   })
 
-
-  function setErr() {
-    let err = {}
-    err.name = name === "" ? "Name is required" : ""
-    err.number = number.length < 16 ? "Card number should be atleast 16 digits" : ""
-    err.cvc = ""
-    if (cvc.length < 3 || cvc.length > 4)
-      err.cvc = "cvc must be 3 or 4 digits"
-    err.expiry = expiry === "" ? "Expiry date is required" : ""  
-  
-    setErrors(err)
-  }
-
   function validate() {
     return Object.values(errors).every(x => x === "")
   }
@@ -49,20 +38,51 @@ function CardForm() {
         break;
       case "cvc":
         setCvc(value);
-        break;      
+        break;
+      default:
+        break;
     }
-    setErr()
+
+    // setErr()
+    let err = {}
+    console.log(name, number, expiry, cvc)
+    err.name = name === "" ? "Name is required" : ""
+    err.number = number.length < 16 ? "Card number should be atleast 16 digits" : ""
+    err.cvc = ""
+    if (cvc.length < 3 || cvc.length > 4)
+      err.cvc = "cvc must be 3 or 4 digits"
+    err.expiry = expiry === "" ? "Expiry date is required" : ""  
+  
+    setErrors(err)
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
+    // check for non empty values
+    if (name === "" || number === "" || cvc === "" || expiry === "") {
+      window.alert('Please fill the form to submit');
+      return;
+    }
     // validate
     if (validate()){
       // make api post call
-      console.log('valid')
-    } else {
-      console.log('invalid')
-    }
-    
+      let body = {
+        name: name,
+        number: number,
+        expiry: expiry,
+        cvc: cvc
+      }
+      axios.post(`${url}/cards`, {
+        body: body
+      })
+      .then((resp) => {
+        // console.log(resp);
+        console.log('success');
+      })
+      .catch((err) => {
+        console.log(err);
+        window.alert('Error while sending data');
+      });
+    };
   }
 
   return (
@@ -84,7 +104,7 @@ function CardForm() {
           placeholder="Card Number"
           onFocus={() => {setFocus('number')}}
           onChange={handleChange}
-          error={errors.number === "" ? false : true}
+          error={errors.number !== ""}
           helperText={errors.number}
         />
         <TextField className="form-item" variant="outlined"
@@ -94,7 +114,7 @@ function CardForm() {
           placeholder="Cardholder Name"
           onFocus={() => {setFocus('name')}}
           onChange={handleChange}
-          error={errors.name === "" ? false : true}
+          error={errors.name !== ""}
           helperText={errors.name}
         />
 
@@ -107,7 +127,8 @@ function CardForm() {
             placeholder="mm/yy"
             onFocus={() => {setFocus('expiry')}}
             onChange={handleChange}
-            {...(errors.expiry !== "" && {error:true, helperText:errors.expiry})}
+            error={errors.expiry !== ""}
+            helperText={errors.expiry}
           />
           <TextField variant="outlined" type="number"
             id="cvc"
@@ -116,7 +137,8 @@ function CardForm() {
             label="CVC"
             onFocus={() => {setFocus('cvc')}}
             onChange={handleChange}
-            {...(errors.cvc !== "" && {error:true, helperText:errors.cvc})}
+            error={errors.cvc !== ""}
+            helperText={errors.cvc}
           />
         </div>
         <Button variant="contained"
