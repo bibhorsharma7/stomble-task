@@ -24,11 +24,34 @@ function CardForm() {
     let err = {}
     console.log("validate- ", name, number, expiry, cvc)
     err.name = name === "" ? "Name is required" : ""
-    err.number = number.length < 16 ? "Card number should be atleast 16 digits" : ""
+
+    err.number  = ""
+    if (number === "") {
+      err.number = "Card Number is required"
+    } else {
+      const nRe = /^([0-9]{16})$/;
+      if (! nRe.test(number))
+        err.number = "Card number is a 16 digit number"
+    }
+    
     err.cvc = ""
-    if (cvc.length < 3 || cvc.length > 4)
-      err.cvc = "cvc must be 3 or 4 digits"
-    err.expiry = expiry === "" ? "Expiry date is required" : ""  
+    if (cvc === "") {
+      err.cvc = "CVC is required"
+    } else {
+      const cRe = /^[1-9][0-9]{2,3}$/;
+      if (! cRe.test(cvc))
+        err.cvc = "Please enter number of 3 or 4 digits"
+    }
+
+    err.expiry = ""
+    if (expiry === "") {
+      err.expiry = "Expiry date is required"
+    } else {
+      const exRe = /^(0[1-9]|1[0-2])\/?((0[1-9])|([1-9][0-9]))$/;
+      if (! exRe.test(expiry))
+        err.expiry = "Please enter a valid date (mm/YY)"
+    }
+    
   
     setErrors(err)
     return Object.values(err).every(x => x === "")
@@ -46,8 +69,7 @@ function CardForm() {
       data: body
     })
     .then((resp) => {
-      // console.log(resp);
-      console.log('success');
+      window.alert('Successfully Saved Card Details');
     })
     .catch((err) => {
       console.log(err);
@@ -56,8 +78,9 @@ function CardForm() {
   }
 
   async function handleSubmit() {
+    // console.log("handle submit = ", name, number, expiry, cvc);
+
     // validate
-    console.log("handle submit = ", name, number, expiry, cvc);
     let valid = validate();
     if (valid) {
       await sendData();
