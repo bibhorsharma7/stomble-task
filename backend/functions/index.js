@@ -24,7 +24,7 @@ app.get("/", async (req, resp) => {
 });
 
 app.post("/", async (req, resp) => {
-  const card = req.body;
+  const card = req.body.data;
 
   await admin.firestore().collection("cards").add(card);
   resp.status(200).send('Success');
