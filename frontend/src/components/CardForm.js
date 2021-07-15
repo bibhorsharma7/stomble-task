@@ -22,7 +22,6 @@ function CardForm() {
 
   function validate() {
     let err = {}
-    console.log("validate- ", name, number, expiry, cvc)
     err.name = name === "" ? "Name is required" : ""
 
     err.number  = ""
@@ -78,14 +77,10 @@ function CardForm() {
   }
 
   async function handleSubmit() {
-    // console.log("handle submit = ", name, number, expiry, cvc);
-
     // validate
     let valid = validate();
     if (valid) {
       await sendData();
-    } else {
-      console.log("unsuccessful")
     }
   }
 
