@@ -1,10 +1,14 @@
 const functions = require("firebase-functions");
 const express = require("express");
+const cors = require('cors');
+// const cors = require('cors')({origin: true});
 
 const admin = require("firebase-admin");
 admin.initializeApp();
 
 const app = express();
+
+app.use(cors());
 
 app.get("/", async (req, resp) => {
   const result = await admin.firestore().collection("cards").get();
@@ -23,8 +27,7 @@ app.post("/", async (req, resp) => {
   const card = req.body;
 
   await admin.firestore().collection("cards").add(card);
-
-  resp.status(200).send();
+  resp.status(200).send('Success');
 });
 
 exports.cards = functions.https.onRequest(app);
