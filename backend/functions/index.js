@@ -43,42 +43,69 @@ function validate(card) {
 }
 
 app.get("/", async (req, resp) => {
-  const result = await admin.firestore().collection("cards").get();
-
-  var cards = []
-  result.forEach((doc) => {
-    let data = doc.data();
-
-    cards.push(data)
-  });
-
-  resp.status(200).send(JSON.stringify(cards))
+  // const result = await admin.firestore().collection("cards").get()
+  admin.firestore().collection("cards").get()
+  .then((result) => {
+    var cards = []
+    result.forEach((doc) => {
+      let data = doc.data();
+      cards.push(data)
+    });
+    resp.status(200).send(JSON.stringify(cards))
+  })
+  .catch(() => {
+    resp.status(500).send()
+  })
 });
 
 
 app.post("/", async (req, resp) => {
   const card = req.body.data;
-  if (card == null) {
+  console.log(card);
+  if (card === null) {
     resp.status(500).send('Bad Request');
-    return;
   }
 
-  let inDB = await admin.firestore().collection("cards").get()  
-  inDB.forEach((doc) => {
-    let data = doc.data();
-    if (card.number === data.number) {
-      resp.status(303).send('This Card already exists');
-      return;
+  
+  admin.firestore().collection("cards").get()
+  .then((result) => {
+    let inDB = []
+    result.forEach((doc) => {
+      inDB.push(doc.data())
+    });
+
+    let exists = inDB.some((data) => {
+      if (card.number === data.number) {
+        return true;
+      }
+      return false;
+    });
+
+    if (exists) {
+      resp.status(303).send('This card already exists')
+    } else {
+      if (! validate(card))
+      resp.status(400).send('Please enter valid card details');
+
+      admin.firestore().collection("cards").add(card)
+      .then(() => {
+        resp.status(200).send('Success')
+      })
+      // .then(() => {
+      //   resp.status(200).send('Success');
+      // })
+      // .catch(() => {
+      //   resp.status(500).send();
+      // })
     }
+
+    
   })
-
-  if (! validate(card)) {
-    resp.status(400).send('Please enter valid card details');
-    return;
-  }
-
-  await admin.firestore().collection("cards").add(card);
-  resp.status(200).send('Success');
+  .catch((err) => {
+    console.log("going to give 500");
+    console.log(err);
+    resp.status(500).send();
+  })
 });
 
 exports.cards = functions.https.onRequest(app);
