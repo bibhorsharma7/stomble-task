@@ -3,7 +3,7 @@ import axios from 'axios';
 import url from '../constants/url';
 import Cards from 'react-credit-cards';
 import 'react-credit-cards/es/styles-compiled.css';
-import { Button, TextField, Select, MenuItem, InputLabel } from '@material-ui/core';
+import { Button, TextField, MenuItem } from '@material-ui/core';
 
 
 function CardForm() {
@@ -66,6 +66,7 @@ function CardForm() {
   },[]);
 
   function validate() {
+    clearErrros();
     const nameRe = /.*[0-9].*$/;
     if (nameRe.test(name))
       setNameErr("Please enter a valid name")
@@ -81,18 +82,8 @@ function CardForm() {
     const exRe = /^(0[1-9]|1[0-2])\/?((0[1-9])|([1-9][0-9]))$/;
     if (! exRe.test(expiry))
       setExpErr("Please enter a valid date (mm/YY)")
-
-    return checkErros();
-  }
-
-  function checkErros() {
-    return (nameErr !== "" || numErr !== ""
-      || expErr !== "" || cvcErr !== "")
-  }
-
-  async function handleSubmit() {
-    // check for empty inputs
     
+    // Different error for empty input
     if (name === "")
       setNameErr("Name is required")
     if (number === "")
@@ -101,14 +92,28 @@ function CardForm() {
       setExpErr("Expiry date is required")
     if (cvc === "")
       setCvcErr("CVC is required")
+    
+    return checkErros();
+  }
 
-    if (checkErros) {
-      // validate from inputs
-      let valid = validate();    
-      if (valid) {
-        await sendData();
-      }
-    } 
+  function clearErrros() {
+    setNameErr('')
+    setNumErr('')
+    setExpErr('')
+    setCvcErr('')
+  }
+
+  function checkErros() {
+    return (nameErr !== "" || numErr !== ""
+      || expErr !== "" || cvcErr !== "")
+  }
+
+  async function handleSubmit() {
+    // validate from inputs
+    let valid = validate();    
+    if (valid) {
+      await sendData();
+    }
   }
 
   function handleSelect(e) {
@@ -149,11 +154,9 @@ function CardForm() {
         setCvc(value)
         break;
       default:
-        validate();
         break;
     }
   }
-
 
   return (
     <div className="card-form">
@@ -167,19 +170,19 @@ function CardForm() {
         />
       </div>
       <div className="form-container">
-        <InputLabel>Select from saved Cards</InputLabel>
-        <Select
+        <TextField
+          select
           label="Saved Cards"
+          InputLabelProps={{shrink: true}}
           className="form-item"
           size="small"
           variant="outlined"
-          label="Saved Cards"
           value={selected}
           onChange={handleSelect}
         >
           <MenuItem value={null}>None</MenuItem>
           {saved.map((obj, i) => <MenuItem value={obj}>{obj.name.toUpperCase() + " " + obj.number}</MenuItem>)}
-        </Select>
+        </TextField>
 
         <TextField className="form-item" variant="outlined"
           id="number"
@@ -194,7 +197,6 @@ function CardForm() {
           helperText={numErr}
         />
 
-        {/* <InputLabel>Cardholder Name</InputLabel> */}
         <TextField className="form-item" variant="outlined"
           id="name"
           value={name}
@@ -202,14 +204,13 @@ function CardForm() {
           InputLabelProps={{shrink: true}}
           size="small"
           onFocus={() => {setFocus('name')}}
-          onChange={(e) => {setSelected(null); setName(e.target.value)}}
+          onChange={handleChange}
           error={nameErr !== ""}
           helperText={nameErr}
         />
 
         <div className="form-item">
           <div>
-            {/* <InputLabel>Expiry Date</InputLabel> */}
             <TextField
               id="expiry"
               value={expiry}
@@ -217,16 +218,15 @@ function CardForm() {
               InputLabelProps={{shrink: true}}
               placeholder="mm/yy"
               inputProps={{ maxLength: 5}}
-              variant="outlined" type="string"
+              variant="outlined"
               size="small"
               onFocus={() => {setFocus('expiry')}}
-              onChange={(e) => {setSelected(null); setExpiry(e.target.value)}}
+              onChange={handleChange}
               error={expErr !== ""}
               helperText={expErr}
             />
           </div>
           <div>
-            {/* <InputLabel>CVC</InputLabel> */}
             <TextField variant="outlined"
               id="cvc"
               size="small"
@@ -235,7 +235,7 @@ function CardForm() {
               InputLabelProps={{shrink: true}}
               inputProps={{ maxLength: 4}}
               onFocus={() => {setFocus('cvc')}}
-              onChange={(e) => {setSelected(null); setCvc(e.target.value)}}
+              onChange={handleChange}
               error={cvcErr !== ""}
               helperText={cvcErr}
             />
