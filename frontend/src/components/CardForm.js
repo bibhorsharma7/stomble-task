@@ -67,6 +67,11 @@ function CardForm() {
     getData();
   },[]);
 
+  // input validation on input change
+  useEffect(() => {
+    validate();
+  },[name,number,expiry,cvc,setErrors])
+
 
   function validate() {
     let err = {name:"",number:"", expiry:"", cvc:""}
@@ -106,8 +111,13 @@ function CardForm() {
     let valid = validate();
 
     // check for empty values only while submitting
-    // let err = {name:"",number:"", expiry:"", cvc:""}
-    let err = errors;
+    let err = {
+      name: errors.name,
+      number: errors.number,
+      expiry: errors.expiry,
+      cvc: errors.cvc
+    }
+    // let err = errors;
     if (name === "")
       err.name = "Name is required"
     if (number === "")
@@ -116,11 +126,13 @@ function CardForm() {
       err.expiry = "Expiry date is required"
     if (cvc === "")
       err.cvc = "CVC is required"
-    // validate from inputs
-    const empty = Object.values(err).every(x => x === "")
 
-    if (!empty)
-      setErrors(err)
+
+    const empty = Object.values(err).every(x => x === "")
+    if (!empty) {
+      console.log('here');
+      setErrors(err);
+    }
 
     if (valid && empty) {
       await sendData();
@@ -171,7 +183,7 @@ function CardForm() {
       default:
         break;
     }
-    validate();
+    // validate();
   }
 
   return (
