@@ -13,14 +13,15 @@ function CardForm() {
   const [cvc, setCvc] = useState('')
   const [focus, setFocus] = useState('')
 
-  const [nameErr, setNameErr] = useState('')
-  const [numErr, setNumErr] = useState('')
-  const [expErr, setExpErr] = useState('')
-  const [cvcErr, setCvcErr] = useState('')
-
   const [saved, setSaved] = useState([])
   const [selected, setSelected] = useState(null)
 
+  const [errors, setErrors] = useState({
+    name: "",
+    number: "",
+    cvc: "",
+    expiry: ""
+  })
   
   async function getData() {
     axios.get(`${url}/cards`)
@@ -34,17 +35,20 @@ function CardForm() {
   }
 
   async function sendData() {
-    let body = {
+    let data = {
       name: name,
       number: number,
       expiry: expiry,
       cvc: cvc
     }
     axios.post(`${url}/cards`, {
-      data: body
+      data: data
     })
     .then((resp) => {
       window.alert('Successfully Saved Card Details');
+      let tmp = saved;
+      tmp.push(data);
+      setSaved(tmp);
     })
     .catch((err) => {
       console.log(err);
@@ -56,63 +60,72 @@ function CardForm() {
         window.alert('Error while sending data');
       }
     })
-    .then(() => {
-      getData();
-    });
   }
   
+  // fetch data when page first loads
   useEffect(() => {
     getData();
   },[]);
 
+
   function validate() {
-    clearErrros();
+    let err = {name:"",number:"", expiry:"", cvc:""}
+
     const nameRe = /.*[0-9].*$/;
     if (nameRe.test(name))
-      setNameErr("Please enter a valid name")
+      err.name = "Please enter a valid name"
 
     const nRe = /^([0-9]{16})$/;
     if (! nRe.test(number))
-      setNumErr("Card number is a 16 digit number")
+      err.number = "Card number is a 16 digit number"
     
     const cRe = /^[1-9][0-9]{2,3}$/;
     if (! cRe.test(cvc))
-      setCvcErr("Please enter number of 3 or 4 digits")
+      err.cvc = "Please enter number of 3 or 4 digits"
 
     const exRe = /^(0[1-9]|1[0-2])\/?((0[1-9])|([1-9][0-9]))$/;
     if (! exRe.test(expiry))
-      setExpErr("Please enter a valid date (mm/YY)")
+      err.expiry = "Please enter a valid date (mm/YY)"
     
-    // Different error for empty input
+    // Do not check for empty values during onChange
     if (name === "")
-      setNameErr("Name is required")
+      err.name = ""
     if (number === "")
-      setNumErr("Number is required")
+      err.number = ""
     if (expiry === "")
-      setExpErr("Expiry date is required")
+      err.expiry = ""
     if (cvc === "")
-      setCvcErr("CVC is required")
+      err.cvc = ""
     
-    return checkErros();
-  }
-
-  function clearErrros() {
-    setNameErr('')
-    setNumErr('')
-    setExpErr('')
-    setCvcErr('')
-  }
-
-  function checkErros() {
-    return (nameErr !== "" || numErr !== ""
-      || expErr !== "" || cvcErr !== "")
+    setErrors(err)
+    return Object.values(err).every(x => x === "")
   }
 
   async function handleSubmit() {
+    // input validation
+    let valid = validate();
+
+    // check for empty values only while submitting
+    // let err = {name:"",number:"", expiry:"", cvc:""}
+    let err = errors;
+    if (name === "")
+      err.name = "Name is required"
+    if (number === "")
+      err.number = "Number is required"
+    if (expiry === "")
+      err.expiry = "Expiry date is required"
+    if (cvc === "")
+      err.cvc = "CVC is required"
     // validate from inputs
-    let valid = validate();    
-    if (valid) {
+    const empty = Object.values(err).every(x => x === "")
+
+    if (!empty)
+      setErrors(err)
+
+    if (valid && empty) {
       await sendData();
+    } else {
+      console.log('invalid');
     }
   }
 
@@ -131,10 +144,12 @@ function CardForm() {
       setExpiry(card.expiry);
       setCvc(card.cvc);
     }
-    setNameErr('');
-    setNumErr('');
-    setExpErr('');
-    setCvcErr('');
+    setErrors({
+      name: '',
+      number: '',
+      expiry: '',
+      cvc: '',
+    });
   }
 
   function handleChange(e) {
@@ -156,6 +171,7 @@ function CardForm() {
       default:
         break;
     }
+    validate();
   }
 
   return (
@@ -177,11 +193,11 @@ function CardForm() {
           className="form-item"
           size="small"
           variant="outlined"
-          value={selected}
+          value={selected === null ? '' : selected}
           onChange={handleSelect}
         >
           <MenuItem value={null}>None</MenuItem>
-          {saved.map((obj, i) => <MenuItem value={obj}>{obj.name.toUpperCase() + " " + obj.number}</MenuItem>)}
+          {saved.map((obj, i) => <MenuItem key={i} value={obj}>{obj.name.toUpperCase() + " " + obj.number}</MenuItem>)}
         </TextField>
 
         <TextField className="form-item" variant="outlined"
@@ -193,8 +209,8 @@ function CardForm() {
           inputProps={{ maxLength: 16 }}
           onFocus={() => {setFocus('number')}}
           onChange={handleChange}
-          error={numErr !== ""}
-          helperText={numErr}
+          error={errors.number !== ""}
+          helperText={errors.number}
         />
 
         <TextField className="form-item" variant="outlined"
@@ -205,8 +221,8 @@ function CardForm() {
           size="small"
           onFocus={() => {setFocus('name')}}
           onChange={handleChange}
-          error={nameErr !== ""}
-          helperText={nameErr}
+          error={errors.name !== ""}
+          helperText={errors.name}
         />
 
         <div className="form-item">
@@ -222,8 +238,8 @@ function CardForm() {
               size="small"
               onFocus={() => {setFocus('expiry')}}
               onChange={handleChange}
-              error={expErr !== ""}
-              helperText={expErr}
+              error={errors.expiry !== ""}
+              helperText={errors.expiry}
             />
           </div>
           <div>
@@ -236,8 +252,8 @@ function CardForm() {
               inputProps={{ maxLength: 4}}
               onFocus={() => {setFocus('cvc')}}
               onChange={handleChange}
-              error={cvcErr !== ""}
-              helperText={cvcErr}
+              error={errors.cvc !== ""}
+              helperText={errors.cvc}
             />
           </div>
         </div>
