@@ -10,6 +10,8 @@ const app = express();
 
 app.use(cors());
 
+// card = {name,number,expiry,cvc}
+// validation for incoming post request
 function validate(card) {
   if (card.name !== null && card.name === "")
     return false;
@@ -21,7 +23,7 @@ function validate(card) {
   if (card.number !== null && card.number === "")
     return false;
 
-  const nRe = /^([0-9]{16})$/;
+  const nRe = /^([0-9]{4} [0-9]{4} [0-9]{4} [0-9]{4})$/;
   if (! nRe.test(card.number))
     return false;
   
@@ -43,7 +45,7 @@ function validate(card) {
 }
 
 app.get("/", async (req, resp) => {
-  // const result = await admin.firestore().collection("cards").get()
+  // fetch from database
   admin.firestore().collection("cards").get()
   .then((result) => {
     var cards = []
@@ -61,12 +63,12 @@ app.get("/", async (req, resp) => {
 
 app.post("/", async (req, resp) => {
   const card = req.body.data;
-  console.log(card);
+  // check for invalid requests
   if (card === null) {
     resp.status(500).send('Bad Request');
   }
 
-  
+  // Check for duplicate request
   admin.firestore().collection("cards").get()
   .then((result) => {
     let inDB = []
@@ -74,6 +76,7 @@ app.post("/", async (req, resp) => {
       inDB.push(doc.data())
     });
 
+    // exists(bool)
     let exists = inDB.some((data) => {
       if (card.number === data.number) {
         return true;
@@ -87,24 +90,15 @@ app.post("/", async (req, resp) => {
       if (! validate(card))
       resp.status(400).send('Please enter valid card details');
 
+      // add to databse
       admin.firestore().collection("cards").add(card)
       .then(() => {
         resp.status(200).send('Success')
       })
-      // .then(() => {
-      //   resp.status(200).send('Success');
-      // })
-      // .catch(() => {
-      //   resp.status(500).send();
-      // })
     }
-
-    
   })
   .catch((err) => {
-    console.log("going to give 500");
-    console.log(err);
-    resp.status(500).send();
+    resp.status(500).send(err);
   })
 });
 

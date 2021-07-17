@@ -46,9 +46,7 @@ function CardForm() {
     })
     .then((resp) => {
       window.alert('Successfully Saved Card Details');
-      let tmp = saved;
-      tmp.push(data);
-      setSaved(tmp);
+      getData()
     })
     .catch((err) => {
       console.log(err);
@@ -72,6 +70,22 @@ function CardForm() {
     validate();
   },[name,number,expiry,cvc,setErrors])
 
+  // Auto-format the input for expiry date
+  useEffect(() => {
+    if (expiry !== "") {
+      let parts = expiry.match(/[0-9]{1,2}/g);
+      setExpiry(parts.join('/'))
+    }
+  },[expiry])
+
+  // Auto-format the input for card number
+  useEffect(() => {
+    if (number !== "") {
+      let parts = number.match(/[0-9]{1,4}/g);
+      setNumber(parts.join(' '));
+    }
+  },[number])
+
 
   function validate() {
     let err = {name:"",number:"", expiry:"", cvc:""}
@@ -80,7 +94,7 @@ function CardForm() {
     if (nameRe.test(name))
       err.name = "Please enter a valid name"
 
-    const nRe = /^([0-9]{16})$/;
+    const nRe = /^([0-9]{4} [0-9]{4} [0-9]{4} [0-9]{4})$/;
     if (! nRe.test(number))
       err.number = "Card number is a 16 digit number"
     
@@ -88,7 +102,7 @@ function CardForm() {
     if (! cRe.test(cvc))
       err.cvc = "Please enter number of 3 or 4 digits"
 
-    const exRe = /^(0[1-9]|1[0-2])\/?((0[1-9])|([1-9][0-9]))$/;
+    const exRe = /^(0[1-9]|1[0-2])\/((0[1-9])|([1-9][0-9]))$/;
     if (! exRe.test(expiry))
       err.expiry = "Please enter a valid date (mm/YY)"
     
@@ -117,7 +131,6 @@ function CardForm() {
       expiry: errors.expiry,
       cvc: errors.cvc
     }
-    // let err = errors;
     if (name === "")
       err.name = "Name is required"
     if (number === "")
@@ -130,21 +143,22 @@ function CardForm() {
 
     const empty = Object.values(err).every(x => x === "")
     if (!empty) {
-      console.log('here');
       setErrors(err);
     }
 
     if (valid && empty) {
       await sendData();
-    } else {
-      console.log('invalid');
     }
+    // else {
+    //   console.log('invalid');
+    // }
   }
 
   function handleSelect(e) {
     e.preventDefault();
     let card = e.target.value;
     setSelected(card);
+    // clear form if no selection
     if (card === null) {
       setName('');
       setNumber('');
@@ -156,12 +170,6 @@ function CardForm() {
       setExpiry(card.expiry);
       setCvc(card.cvc);
     }
-    setErrors({
-      name: '',
-      number: '',
-      expiry: '',
-      cvc: '',
-    });
   }
 
   function handleChange(e) {
@@ -183,7 +191,6 @@ function CardForm() {
       default:
         break;
     }
-    // validate();
   }
 
   return (
@@ -218,7 +225,7 @@ function CardForm() {
           value={number}
           label="Card Number"
           InputLabelProps={{shrink: true}}
-          inputProps={{ maxLength: 16 }}
+          inputProps={{ maxLength: 19 }}
           onFocus={() => {setFocus('number')}}
           onChange={handleChange}
           error={errors.number !== ""}
